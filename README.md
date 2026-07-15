@@ -4,14 +4,13 @@ Cloudflare AI Gateway doesn't currently offer webhook delivery — if you kick o
 
 This repo is a single Worker demoing that end to end: it queues async Workers AI predictions, points the lifecycle webhook back at itself, verifies each delivery's signature, and stores the events in KV. Binary outputs (images) land in R2 and are delivered as signed, expiring artifact URLs.
 
-```
-POST /predictions or /images ──▶ prediction Workflow runs inference
-                                       │
-                                       ▼
-             signed webhook ──▶ POST /hooks/ai ──▶ verified with parseWebhook() ──▶ KV
-                                                                                     │
-GET /events/<prediction id> ◀─────────────────────────────────────────────────────────┘
-```
+The loop, in order:
+
+1. `POST /predictions` (or `/images`) queues the prediction and returns `{"id": "pred_…"}` immediately.
+2. A durable Workflow runs the inference; binary or oversized output is stored in R2 as an artifact.
+3. A second Workflow delivers the signed lifecycle event to `POST /hooks/ai`, retrying with backoff if the receiver is down.
+4. The receiver verifies the signature with `parseWebhook()` and stores the event in KV.
+5. `GET /events/<prediction id>` returns the stored event — including the artifact URL for binary outputs.
 
 | Route | What it does |
 | --- | --- |

@@ -4,6 +4,8 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-07-15",
   "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [{ "pattern": "hooks.cory.land", "custom_domain": true }],
   "ai": { "binding": "AI" },
   "workflows": [
     {

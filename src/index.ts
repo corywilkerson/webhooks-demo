@@ -13,15 +13,6 @@ export {
 // ("openai/gpt-4.1-mini", …) work too via AI Gateway Unified Billing.
 const MODEL = "@cf/meta/llama-3.2-3b-instruct";
 
-const USAGE = `webhooks-demo — ai-gateway-webhooks end to end in one Worker
-
-  POST /predictions   {"prompt": "…"}   queue inference, returns {"id": "pred_…"} immediately
-  GET  /events/<id>                     the signed, verified webhook event, once delivered
-
-The Worker queues a prediction against its own /hooks/ai endpoint, receives
-the lifecycle webhook, verifies its signature, and stores the event in KV.
-`;
-
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -36,12 +27,6 @@ export default {
 
     if (request.method === "GET" && url.pathname.startsWith("/events/")) {
       return getEvent(url, env);
-    }
-
-    if (request.method === "GET" && url.pathname === "/") {
-      return new Response(USAGE, {
-        headers: { "content-type": "text/plain; charset=utf-8" },
-      });
     }
 
     return new Response("Not found", { status: 404 });

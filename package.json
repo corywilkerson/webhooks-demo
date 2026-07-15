@@ -10,7 +10,7 @@
     "types": "wrangler types"
   },
   "dependencies": {
-    "ai-gateway-webhooks": "file:../predictions/ai-gateway-webhooks-0.1.0.tgz"
+    "ai-gateway-webhooks": "^0.1.0"
   },
   "devDependencies": {
     "@types/node": "latest",

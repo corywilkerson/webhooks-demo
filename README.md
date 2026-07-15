@@ -1,16 +1,18 @@
 # webhooks-demo
 
-End-to-end demo of [ai-gateway-webhooks](https://github.com/corywilkerson/ai-gateway-webhooks) in a single Worker at `hooks.cory.land`: it queues async AI predictions against itself, receives the signed lifecycle webhook, verifies the signature, and stores the event in KV.
+End-to-end demo of [ai-gateway-webhooks](https://github.com/corywilkerson/ai-gateway-webhooks) in a single Worker: it queues async AI predictions against itself, receives the signed lifecycle webhook, verifies the signature, and stores the event in KV.
+
+The reference deployment at `hooks.cory.land` sits behind Cloudflare Access, so to try it you deploy your own copy — it takes about two minutes:
 
 ```sh
 # queue a prediction — returns immediately
-curl -s -X POST https://hooks.cory.land/predictions \
+curl -s -X POST https://<your-deployment>/predictions \
   -H "content-type: application/json" \
   -d '{"prompt": "In one sentence, why are webhooks better than polling?"}'
 # → {"id":"pred_…","status":"queued","createdAt":"…","watch":"/events/pred_…"}
 
 # fetch the verified webhook event once inference completes
-curl -s https://hooks.cory.land/events/pred_…
+curl -s https://<your-deployment>/events/pred_…
 ```
 
 ## Setup
@@ -22,7 +24,7 @@ npm run deploy
 npm run secrets                           # generate + upload AI_WEBHOOK_SECRET
 ```
 
-The Worker deploys only to the `hooks.cory.land` custom domain (`workers_dev` is disabled).
+`wrangler.jsonc` pins the reference deployment's custom domain and KV namespace id (`workers_dev` is disabled) — swap in your own domain and namespace id, or delete `routes`/`workers_dev` to use your `workers.dev` URL. Webhook URLs must be HTTPS, so exercise the demo against a deployed URL rather than local `wrangler dev`.
 
 ## Access
 

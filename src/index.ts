@@ -1,5 +1,7 @@
 import {
+  ARTIFACT_PATH_PREFIX,
   createAsyncAI,
+  handleArtifactRequest,
   parseWebhook,
   WebhookVerificationError,
 } from "ai-gateway-webhooks";
@@ -9,16 +11,26 @@ export {
   WebhookDeliveryWorkflow,
 } from "ai-gateway-webhooks";
 
-// Small Workers AI model so demo runs are fast and cheap. Third-party models
+// Small Workers AI models so demo runs are fast and cheap. Third-party models
 // ("openai/gpt-4.1-mini", …) work too via AI Gateway Unified Billing.
-const MODEL = "@cf/meta/llama-3.2-3b-instruct";
+const TEXT_MODEL = "@cf/meta/llama-3.2-3b-instruct";
+const IMAGE_MODEL = "@cf/bytedance/stable-diffusion-xl-lightning";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    // Signed, expiring artifact downloads (binary/large outputs stored in R2).
+    if (url.pathname.startsWith(ARTIFACT_PATH_PREFIX)) {
+      return handleArtifactRequest(request, env);
+    }
+
     if (request.method === "POST" && url.pathname === "/predictions") {
       return queuePrediction(request, env);
+    }
+
+    if (request.method === "POST" && url.pathname === "/images") {
+      return queueImage(request, env);
     }
 
     if (request.method === "POST" && url.pathname === "/hooks/ai") {
@@ -44,11 +56,35 @@ async function queuePrediction(request: Request, env: Env): Promise<Response> {
 
   const ai = createAsyncAI(env);
   const prediction = await ai.run(
-    MODEL,
+    TEXT_MODEL,
     { messages: [{ role: "user", content: prompt }] },
     {
       webhook: { url: webhookUrl },
       context: { demo: "webhooks-demo", promptChars: prompt.length },
+    },
+  );
+
+  return Response.json(
+    { ...prediction, watch: `/events/${prediction.id}` },
+    { status: 202 },
+  );
+}
+
+// Binary output (a PNG here) exceeds what fits in a webhook payload, so the
+// library stores it in R2 and delivers a signed, expiring artifact URL.
+async function queueImage(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json().catch(() => ({}))) as { prompt?: string };
+  const prompt = body.prompt ?? "A watercolor lighthouse at dusk";
+
+  const webhookUrl = new URL("/hooks/ai", request.url).toString();
+
+  const ai = createAsyncAI(env);
+  const prediction = await ai.run(
+    IMAGE_MODEL,
+    { prompt },
+    {
+      webhook: { url: webhookUrl },
+      context: { demo: "webhooks-demo", kind: "image" },
     },
   );
 

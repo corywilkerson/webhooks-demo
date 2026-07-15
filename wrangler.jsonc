@@ -5,7 +5,23 @@
   "compatibility_date": "2026-07-15",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
-  "routes": [{ "pattern": "hooks.cory.land", "custom_domain": true }],
+  // Two hostnames, one Worker: the API/webhook origin, and a separate origin
+  // for artifact downloads. They must differ — the library rejects webhook
+  // URLs on AI_WEBHOOK_PUBLIC_URL's own origin (loop prevention), and this
+  // demo delivers webhooks to itself.
+  "routes": [
+    { "pattern": "hooks.cory.land", "custom_domain": true },
+    { "pattern": "artifacts.cory.land", "custom_domain": true },
+  ],
+  "vars": {
+    "AI_WEBHOOK_PUBLIC_URL": "https://artifacts.cory.land",
+  },
+  "r2_buckets": [
+    {
+      "binding": "AI_ARTIFACTS",
+      "bucket_name": "webhooks-demo-ai-artifacts",
+    },
+  ],
   "ai": { "binding": "AI" },
   "workflows": [
     {

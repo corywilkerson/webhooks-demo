@@ -44,9 +44,13 @@ Webhook URLs must be HTTPS, so run against your deployed URL — local `wrangler
 
 ## Locking it down
 
-`POST /predictions` spends Workers AI money and `GET /events/*` exposes model output, so don't leave them public. This instance uses Cloudflare Access (Zero Trust → Access → Applications) with two self-hosted apps:
+`POST /predictions` spends Workers AI money and `GET /events/*` exposes model output, so don't leave them public. How you protect them is up to you — an API key or session check in the fetch handler, a WAF rule, mTLS, or whatever your app already uses for auth.
 
-1. `<your-host>/hooks/ai` — policy **Bypass, Everyone**. The delivery Workflow POSTs here from outside any Access session, and the route is already authenticated by HMAC signature verification — forged requests get a 401.
+Whatever you pick, keep `/hooks/ai` reachable without it: the delivery Workflow POSTs there from outside any user session, and the route is already authenticated by HMAC signature verification — forged requests get a 401.
+
+For reference, this instance uses Cloudflare Access (Zero Trust → Access → Applications) with two self-hosted apps:
+
+1. `<your-host>/hooks/ai` — policy **Bypass, Everyone**.
 2. `<your-host>` — policy **Allow**, your identity.
 
 Access applies the most specific matching application, so the webhook path stays reachable while everything else gets a login wall.

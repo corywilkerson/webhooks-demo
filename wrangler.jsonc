@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "webhooks-demo",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "ai": { "binding": "AI" },
+  "workflows": [
+    {
+      "binding": "AI_PREDICTIONS",
+      "name": "webhooks-demo-predictions",
+      "class_name": "PredictionWorkflow",
+    },
+    {
+      "binding": "AI_WEBHOOK_DELIVERIES",
+      "name": "webhooks-demo-deliveries",
+      "class_name": "WebhookDeliveryWorkflow",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "EVENTS",
+      "id": "63ea545f355a43eda88e9d1f6669043e",
+    },
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 },
+  },
+}
